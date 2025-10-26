@@ -1,0 +1,202 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h2>💰 Add New Expense</h2>
+  <form method="POST" class="expense-form">
+    <div class="form-group">
+      <label for="amount">💵 Amount (₹)</label>
+      <input
+        type="number"
+        id="amount"
+        name="amount"
+        step="0.01"
+        min="0"
+        required
+        placeholder="Enter amount..."
+      />
+    </div>
+    <div class="form-group">
+      <label for="category">🏷️ Category</label>
+      <select id="category" name="category">
+        <option value="Food">🍕 Food</option>
+        <option value="Transportation">🚗 Transportation</option>
+        <option value="Entertainment">🎬 Entertainment</option>
+        <option value="Shopping">🛍️ Shopping</option>
+        <option value="Bills">📄 Bills</option>
+        <option value="Healthcare">🏥 Healthcare</option>
+        <option value="Education">📚 Education</option>
+        <option value="Travel">✈️ Travel</option>
+        <option value="Other">📦 Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="note">📝 Note (optional)</label>
+      <input
+        type="text"
+        id="note"
+        name="note"
+        placeholder="What was this expense for?"
+      />
+    </div>
+    <div class="form-group">
+      <label for="date">📅 Date</label>
+      <input
+        type="date"
+        id="date"
+        name="date"
+        value="{{ moment().format('YYYY-MM-DD') if moment else '' }}"
+      />
+    </div>
+    <button type="submit" class="btn btn-primary">➕ Add Expense</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>📊 Recent Expenses</h2>
+  {% if expenses %}
+  <div class="expenses-summary">
+    <div class="summary-stats">
+      <div class="stat">
+        <span class="label">💰 Total (last 20)</span>
+        <span class="value">₹{{ '%.2f'|format(expenses|sum(attribute='amount')) }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">📈 Count</span>
+        <span class="value">{{ expenses|length }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">📅 Latest</span>
+        <span class="value">{{ expenses[0].created_at.strftime('%m/%d') if expenses else 'N/A' }}</span>
+      </div>
+    </div>
+  </div>
+  <div style="overflow-x: auto;">
+    <table class="expenses">
+      <thead>
+        <tr>
+          <th>📅 Date</th>
+          <th>🏷️ Category</th>
+          <th>📝 Note</th>
+          <th>💰 Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td>{{ e.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>
+            {% if e.category == 'Food' %}🍕
+            {% elif e.category == 'Transportation' %}🚗
+            {% elif e.category == 'Entertainment' %}🎬
+            {% elif e.category == 'Shopping' %}🛍️
+            {% elif e.category == 'Bills' %}📄
+            {% elif e.category == 'Healthcare' %}🏥
+            {% elif e.category == 'Education' %}📚
+            {% elif e.category == 'Travel' %}✈️
+            {% else %}📦{% endif %}
+            {{ e.category }}
+          </td>
+          <td>{{ e.note or '-' }}</td>
+          <td class="amount">₹{{ '%.2f'|format(e.amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 40px; color: #718096;">
+    <div style="font-size: 4rem; margin-bottom: 20px;">📝</div>
+    <h3 style="margin: 0 0 10px 0; color: #4a5568;">No expenses yet!</h3>
+    <p style="margin: 0;">Add your first expense above to get started with tracking your spending.</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>📈 Spending Analytics</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+    <div class="analytics-container">
+      <h3 style="margin: 0 0 20px 0; color: #44444E; text-align: center; font-weight: 600; font-size: 1.1rem;">🏷️ Spending by Category</h3>
+      <div style="height: 300px; position: relative;">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+    <div class="analytics-container">
+      <h3 style="margin: 0 0 20px 0; color: #44444E; text-align: center; font-weight: 600; font-size: 1.1rem;">📊 Daily Spending Trend</h3>
+      <div style="height: 300px; position: relative;">
+        <canvas id="dailyChart"></canvas>
+      </div>
+      <div style="margin-top: 16px; padding: 12px; background: rgba(166, 123, 123, 0.05); border-radius: 8px; border-left: 3px solid #A67B7B;">
+        <p style="margin: 0; font-size: 0.9rem; color: #6B6B75; text-align: center;">
+          💡 <strong>Tip:</strong> Hover over data points to see detailed spending information for each day.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='chart-helper.js') }}"></script>
+<script>
+  // Load analytics data
+  fetch('/api/summary?days=30')
+    .then(response => response.json())
+    .then(data => {
+      // Category chart
+      const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+      new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+          labels: data.categories.map(c => c.category),
+          datasets: [{
+            data: data.categories.map(c => c.total),
+            backgroundColor: [
+              '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+              '#9966FF', '#FF9F40', '#FF6384'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Spending by Category (Last 30 Days)'
+            }
+          }
+        }
+      });
+
+      // Daily spending chart
+      const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+      new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+          labels: data.daily.map(d => d.date),
+          datasets: [{
+            label: 'Daily Spending',
+            data: data.daily.map(d => d.total),
+            borderColor: '#36A2EB',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Daily Spending Trend (Last 30 Days)'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    })
+    .catch(error => {
+      console.error('Error loading analytics:', error);
+    });
+</script>
+{% endblock %}

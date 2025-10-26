@@ -1,0 +1,63 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <h2>📋 All Expenses</h2>
+  {% if expenses %}
+  <div class="summary-stats" style="margin-bottom: 30px;">
+    <div class="stat">
+      <span class="label">💰 Total Spent</span>
+      <span class="value">₹{{ '%.2f'|format(expenses|sum(attribute='amount')) }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">📊 Total Count</span>
+      <span class="value">{{ expenses|length }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">📅 Date Range</span>
+      <span class="value">{{ expenses[-1].created_at.strftime('%m/%d') if expenses else 'N/A' }} - {{ expenses[0].created_at.strftime('%m/%d') if expenses else 'N/A' }}</span>
+    </div>
+  </div>
+  <div style="overflow-x: auto;">
+    <table class="expenses full">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>📅 Date</th>
+          <th>🏷️ Category</th>
+          <th>📝 Note</th>
+          <th>💰 Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ e.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>
+            {% if e.category == 'Food' %}🍕
+            {% elif e.category == 'Transportation' %}🚗
+            {% elif e.category == 'Entertainment' %}🎬
+            {% elif e.category == 'Shopping' %}🛍️
+            {% elif e.category == 'Bills' %}📄
+            {% elif e.category == 'Healthcare' %}🏥
+            {% elif e.category == 'Education' %}📚
+            {% elif e.category == 'Travel' %}✈️
+            {% else %}📦{% endif %}
+            {{ e.category }}
+          </td>
+          <td>{{ e.note or '-' }}</td>
+          <td class="amount">₹{{ '%.2f'|format(e.amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 40px; color: #718096;">
+    <div style="font-size: 4rem; margin-bottom: 20px;">📝</div>
+    <h3 style="margin: 0 0 10px 0; color: #4a5568;">No expenses yet!</h3>
+    <p style="margin: 0;">Start tracking your expenses by adding your first expense.</p>
+    <a href="{{ url_for('index') }}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 12px; font-weight: 600;">➕ Add First Expense</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

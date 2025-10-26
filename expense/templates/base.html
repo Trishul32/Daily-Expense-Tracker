@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>💰 Expense Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Expense Tracker 💸 </h1>
+        <nav>
+          <a href="{{ url_for('index') }}"> 🛖 Home</a>
+          <a href="{{ url_for('expenses_table') }}">📋 All Expenses</a>
+          {% if current_user.is_authenticated %}
+          <div class="user-menu">
+            <span class="user-info">👤 {{ current_user.username }}</span>
+            <a href="{{ url_for('logout') }}" class="logout-link">🚪 Logout</a>
+          </div>
+          {% endif %}
+        </nav>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="flash-container">
+        {% for category, msg in messages %}
+        <div class="flash {{ category }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+
+      <main>{% block content %}{% endblock %}</main>
+
+      <footer>
+        <small>Built with Flask • SQLite • Chart.js</small>
+      </footer>
+    </div>
+  </body>
+</html>
